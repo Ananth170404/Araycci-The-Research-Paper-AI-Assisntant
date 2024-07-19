@@ -3,3 +3,4 @@ PyMuPDF
 sentence-transformers
 pinecone-client
 huggingface-hub
+gTTS
