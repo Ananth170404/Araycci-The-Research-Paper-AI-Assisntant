@@ -33,8 +33,9 @@ def create_index():
     )
     return pc.Index(index_name)
 
-def extract_text_from_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
+def extract_text_from_pdf(pdf_file):
+    # Open the PDF file-like object using PyMuPDF
+    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
     text = ""
     for page in doc:
         text += page.get_text()
