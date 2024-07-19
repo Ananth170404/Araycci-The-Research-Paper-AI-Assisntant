@@ -5,6 +5,15 @@ from sentence_transformers import SentenceTransformer
 import pinecone
 from pinecone import Pinecone, ServerlessSpec
 from huggingface_hub import InferenceClient
+import io
+
+def extract_text_from_pdf(pdf_file):
+    # pdf_file is a BytesIO object, not a file path
+    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
 
 # Initialize Pinecone
 pinecone_api_key = "b887f4da-c8c8-4e25-954b-1c0c15df7312"
@@ -30,13 +39,6 @@ def create_index():
         )
     )
     return pc.Index(index_name)
-
-def extract_text_from_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
