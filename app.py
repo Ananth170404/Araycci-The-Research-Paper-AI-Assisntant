@@ -5,15 +5,8 @@ from sentence_transformers import SentenceTransformer
 import pinecone
 from pinecone import Pinecone, ServerlessSpec
 from huggingface_hub import InferenceClient
+from gtts import gTTS
 import io
-
-def extract_text_from_pdf(pdf_file):
-    # pdf_file is a BytesIO object, not a file path
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
 
 # Initialize Pinecone
 pinecone_api_key = "b887f4da-c8c8-4e25-954b-1c0c15df7312"
@@ -39,6 +32,13 @@ def create_index():
         )
     )
     return pc.Index(index_name)
+
+def extract_text_from_pdf(pdf_path):
+    doc = fitz.open(pdf_path)
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
@@ -82,6 +82,13 @@ def generate_response_from_chunks(chunks, query):
     response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
 
+def generate_audio(text):
+    tts = gTTS(text=text, lang='en')
+    audio_io = io.BytesIO()
+    tts.write_to_fp(audio_io)
+    audio_io.seek(0)
+    return audio_io
+
 # Streamlit app
 st.sidebar.title("PDF Research Assistant")
 pdf_file = st.sidebar.file_uploader("Upload a PDF", type="pdf")
@@ -111,7 +118,14 @@ if pdf_file:
             with st.spinner("Searching for answers..."):
                 relevant_chunks = get_relevant_chunks(query, st.session_state.index)
                 response = generate_response_from_chunks(relevant_chunks, query)
+                
+                # Display text response
                 st.write(response)
+                
+                # Generate and display audio response
+                audio_io = generate_audio(response)
+                st.audio(audio_io, format='audio/mp3')
+                st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
         
         if st.button("Ask another question"):
             st.experimental_rerun()
