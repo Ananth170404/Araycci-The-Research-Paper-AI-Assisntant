@@ -1,41 +1,79 @@
+import pyaudio
+import wave
 import speech_recognition as sr
-from pydub import AudioSegment
-import io
+import threading
+import IPython.display as ipd
 
-def convert_to_wav(audio_file):
-    """
-    Convert audio file to WAV format if it is not already in WAV format.
-    
-    :param audio_file: File-like object of the audio file.
-    :return: In-memory WAV file-like object.
-    """
-    audio = AudioSegment.from_file(audio_file)
-    wav_io = io.BytesIO()
-    audio.export(wav_io, format='wav')
-    wav_io.seek(0)  # Reset stream position to the beginning
-    return wav_io
+# Parameters
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+CHUNK = 1024
+WAVE_OUTPUT_FILENAME = "output.wav"
 
-def transcribe_audio(audio_file, language_code='en-US'):
-    """
-    Transcribe audio file using Google's speech recognition.
-    
-    :param audio_file: File-like object of the audio file.
-    :param language_code: Language code for speech recognition.
-    :return: Transcribed text.
-    """
+audio = pyaudio.PyAudio()
+frames = []
+recording = False
+stream = None
+record_thread = None
+language = 'en-US'
+
+# Language map
+language_map = {
+    'English': 'en-US',
+    'German': 'de-DE',
+    'Spanish': 'es-ES',
+    'French': 'fr-FR'
+}
+
+def start_recording():
+    global recording, stream, frames, record_thread
+    if not recording:
+        recording = True
+        frames = []
+        stream = audio.open(format=FORMAT, channels=CHANNELS,
+                            rate=RATE, input=True,
+                            frames_per_buffer=CHUNK)
+        print("Recording started. Speak into the microphone.")
+        record_thread = threading.Thread(target=record_audio)
+        record_thread.start()
+
+def record_audio():
+    global recording, stream, frames
+    while recording:
+        data = stream.read(CHUNK)
+        frames.append(data)
+
+def stop_recording():
+    global recording, stream, record_thread
+    if recording:
+        recording = False
+        record_thread.join()
+        stream.stop_stream()
+        stream.close()
+        with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(audio.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+        print("Recording stopped.")
+        play_audio()
+        text=transcribe_audio()
+        return text
+
+def play_audio():
+    ipd.display(ipd.Audio(WAVE_OUTPUT_FILENAME))
+
+def transcribe_audio():
     recognizer = sr.Recognizer()
-    text = ""
-    
-    try:
-        wav_file = convert_to_wav(audio_file)  # Convert to WAV format if necessary
-        with sr.AudioFile(wav_file) as source:
-            audio_data = recognizer.record(source)
-            text = recognizer.recognize_google(audio_data, language=language_code)
-    except sr.UnknownValueError:
-        text = "Google Speech Recognition could not understand the audio"
-    except sr.RequestError as e:
-        text = f"Could not request results from Google Speech Recognition service; {e}"
-    except Exception as e:
-        text = f"Unexpected error; {e}"
-    
+    with sr.AudioFile(WAVE_OUTPUT_FILENAME) as source:
+        audio_data = recognizer.record(source)
+        try:
+            # Recognize speech using Google's speech recognition
+            text = recognizer.recognize_google(audio_data, language=language)
+        except sr.UnknownValueError:
+            print("Google Speech Recognition could not understand audio")
+        except sr.RequestError as e:
+            print("Could not request results from Google Speech Recognition service; {0}".format(e))
+
     return text
