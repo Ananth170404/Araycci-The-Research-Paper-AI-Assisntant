@@ -35,11 +35,7 @@ if pdf_files:
     
     # Query handling
     if st.session_state.index:
-        if 'query_count' not in st.session_state:
-            st.session_state.query_count = 0
-
-        query_key = f"query_{st.session_state.query_count}"
-        query = st.text_input("Enter your question:", key=query_key)
+        query = st.text_input("Enter your question:", key="query")
         ask_button = st.button("Ask")
         end_button = st.button("End conversation")
 
@@ -60,13 +56,8 @@ if pdf_files:
                 st.audio(audio_io, format='audio/mp3')
                 st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
 
-            # Increment query count to use a new key for the next query
-            st.session_state.query_count += 1
-            st.experimental_rerun()
-
         if end_button:
             st.session_state.index = None
-            st.session_state.query_count = 0
             st.experimental_rerun()  # Reset the app by rerunning
 
 else:
