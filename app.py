@@ -6,8 +6,8 @@ from translate import translate, generate_audio
 
 # Display the custom logo using st.image
 st.sidebar.image("logo.jpg")
-st.title("Aryacci Research Paper Bot")
-st.sidebar.title("PDF Research Assistant")
+st.title("Aryacci Research Paper Assistant")
+st.sidebar.title("Research Assistant")
 pdf_files = st.sidebar.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
 
 lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
