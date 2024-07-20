@@ -10,3 +10,4 @@ sounddevice
 SpeechRecognition
 ipython
 numpy
+scipy
