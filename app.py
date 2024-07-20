@@ -2,33 +2,35 @@ import streamlit as st
 from rohit_section import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, chunk_text, store_chunks_in_pinecone
 from translate import translate, generate_audio
 
-
 # Streamlit app
 
 # Display the custom logo using st.image
 st.sidebar.image("logo.jpg")
-st.title("Aryacci Reserch Paper Bot")
+st.title("Aryacci Research Paper Bot")
 st.sidebar.title("PDF Research Assistant")
-pdf_file = st.sidebar.file_uploader("Upload a PDF", type="pdf")
+pdf_files = st.sidebar.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
 
-lang=st.sidebar.radio("Choose", ["English","French", "Spanish"])
+lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
 
-if pdf_file:
+if pdf_files:
 
     if 'index' not in st.session_state:
         st.session_state.index = None
 
     if st.session_state.index is None:
-        with st.spinner("Processing PDF..."):
-            text = extract_text_from_pdf(pdf_file)
-            cleaned_text = clean_text(text)
-            chunks = chunk_text(cleaned_text)
+        with st.spinner("Processing PDFs..."):
+            combined_chunks = []
+            for pdf_file in pdf_files:
+                text = extract_text_from_pdf(pdf_file)
+                cleaned_text = clean_text(text)
+                chunks = chunk_text(cleaned_text)
+                combined_chunks.extend(chunks)
             
             # Create Pinecone index and store chunks
             st.session_state.index = create_index()
             if st.session_state.index:
-                store_chunks_in_pinecone(chunks, st.session_state.index)
-                st.success("PDF processed and indexed successfully!")
+                store_chunks_in_pinecone(combined_chunks, st.session_state.index)
+                st.success("PDFs processed and indexed successfully!")
             else:
                 st.error("Failed to create Pinecone index.")
     
@@ -40,8 +42,8 @@ if pdf_file:
                 relevant_chunks = get_relevant_chunks(query, st.session_state.index)
                 response = generate_response_from_chunks(relevant_chunks, query)
                 
-                if lang!="English":
-                    translated_response=translate(response, lang)
+                if lang != "English":
+                    translated_response = translate(response, lang)
                     st.write(translated_response)
                     audio_io = generate_audio(translated_response, lang)
                 else:
@@ -49,12 +51,9 @@ if pdf_file:
                     audio_io = generate_audio(response, lang)
                     
                 # Generate and display audio response
-                
                 st.audio(audio_io, format='audio/mp3')
                 st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
 
-            
-        
             if st.button("Ask another question"):
                 st.experimental_rerun()
             
