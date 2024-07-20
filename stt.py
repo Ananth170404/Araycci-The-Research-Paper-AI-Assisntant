@@ -13,8 +13,14 @@ def convert_to_wav(audio_path):
     wav_path = f"{base}.wav"
     
     if ext.lower() != '.wav':
-        audio = AudioSegment.from_file(audio_path)
-        audio.export(wav_path, format='wav')
+        try:
+            print(f"Converting {audio_path} to WAV format...")
+            audio = AudioSegment.from_file(audio_path)
+            audio.export(wav_path, format='wav')
+            print(f"Conversion complete. Saved to {wav_path}")
+        except Exception as e:
+            print(f"Error during conversion: {e}")
+            raise
     else:
         wav_path = audio_path
     
@@ -42,5 +48,11 @@ def transcribe_audio(audio_path, language_code='en-US'):
         text = f"Could not request results from Google Speech Recognition service; {e}"
     except ValueError as e:
         text = f"Error processing the audio file; {e}"
-
+    except Exception as e:
+        text = f"Unexpected error; {e}"
+    finally:
+        # Clean up the converted WAV file if it was created
+        if wav_path != audio_path and os.path.exists(wav_path):
+            os.remove(wav_path)
+    
     return text
