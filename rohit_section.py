@@ -29,12 +29,13 @@ def create_index():
     )
     return pc.Index(index_name)
 
-def extract_text_from_pdf(pdf_file):
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
+def extract_text_from_pdfs(pdf_files):
+    all_text = ""
+    for pdf_file in pdf_files:
+        doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+        for page in doc:
+            all_text += page.get_text()
+    return all_text
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
