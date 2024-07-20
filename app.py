@@ -4,17 +4,16 @@ from rohit_section import generate_response_from_chunks, get_relevant_chunks, cr
 from translate import translate, generate_audio
 from stt import transcribe_audio
 
-# Streamlit app
-
 # Display the custom logo using st.image
 st.sidebar.image("logo.jpg")
 st.title("Aryacci Research Paper Bot")
 st.sidebar.title("PDF Research Assistant")
+
 pdf_file = st.sidebar.file_uploader("Upload a PDF", type="pdf")
+audio_file = st.sidebar.file_uploader("Upload an Audio File", type=["wav", "mp3"])
 
 lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
 
-# Language map
 language_map = {
     'English': 'en-US',
     'German': 'de-DE',
@@ -33,7 +32,6 @@ if pdf_file:
             cleaned_text = clean_text(text)
             chunks = chunk_text(cleaned_text)
 
-            # Create Pinecone index and store chunks
             st.session_state.index = create_index()
             if st.session_state.index:
                 store_chunks_in_pinecone(chunks, st.session_state.index)
@@ -41,55 +39,43 @@ if pdf_file:
             else:
                 st.error("Failed to create Pinecone index.")
 
-    # Query handling
     if st.session_state.index:
 
         if 'query' not in st.session_state:
             st.session_state.query = None
 
         speech = st.checkbox("Voice")
-
-        if speech:
-            # Display the HTML recorder
-            with open("recorder.html", "r") as f:
-                recorder_html = f.read()
-            components.html(recorder_html, height=300)
-
-            # Handle audio file upload from HTML recorder
-            audio_file = st.file_uploader("Upload your recorded audio", type=["wav"])
+        
+        query = ''
+        if not speech:
+            query = st.text_input("Enter your question:")
+        else:
+            if lang in language_map:
+                language = language_map[lang]
 
             if audio_file:
-                st.audio(audio_file)
+                query = transcribe_audio(audio_file, language)
+                st.write(query)
 
-                # Save and transcribe the uploaded file
-                with open("uploaded_audio.wav", "wb") as f:
-                    f.write(audio_file.getbuffer())
-
-                query = transcribe_audio("uploaded_audio.wav", language_map[lang])
-                st.markdown(f"<p style='color:white;'>Transcription:</p>", unsafe_allow_html=True)
-                st.markdown(f"<p style='color:white;'>{query}</p>", unsafe_allow_html=True)
-
-        else:
-            query = st.text_input("Enter your question:")
-
+        if query:
+            st.session_state.query = query
+        
         if st.button("Ask"):
-            if query:
-                st.session_state.query = query
-                with st.spinner("Searching for answers..."):
-                    relevant_chunks = get_relevant_chunks(query, st.session_state.index)
-                    response = generate_response_from_chunks(relevant_chunks, query)
+            query = st.session_state.query
+            with st.spinner("Searching for answers..."):
+                relevant_chunks = get_relevant_chunks(query, st.session_state.index)
+                response = generate_response_from_chunks(relevant_chunks, query)
 
-                    if lang != "English":
-                        translated_response = translate(response, lang)
-                        st.write(translated_response)
-                        audio_io = generate_audio(translated_response, lang)
-                    else:
-                        st.write(response)
-                        audio_io = generate_audio(response, lang)
+                if lang != "English":
+                    translated_response = translate(response, lang)
+                    st.write(translated_response)
+                    audio_io = generate_audio(translated_response, lang)
+                else:
+                    st.write(response)
+                    audio_io = generate_audio(response, lang)
 
-                    # Generate and display audio response
-                    st.audio(audio_io, format='audio/mp3')
-                    st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
+                st.audio(audio_io, format='audio/mp3')
+                st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
 
             if st.button("Ask another question"):
                 st.experimental_rerun()
