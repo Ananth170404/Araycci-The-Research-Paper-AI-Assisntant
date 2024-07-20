@@ -13,7 +13,6 @@ pdf_files = st.sidebar.file_uploader("Upload PDFs", type="pdf", accept_multiple_
 lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
 
 if pdf_files:
-
     if 'index' not in st.session_state:
         st.session_state.index = None
 
@@ -36,8 +35,11 @@ if pdf_files:
     
     # Query handling
     if st.session_state.index:
-        query = st.text_input("Enter your question:")
-        if st.button("Ask"):
+        query = st.text_input("Enter your question:", key="query")
+        ask_button = st.button("Ask")
+        end_button = st.button("End conversation")
+
+        if ask_button and query:
             with st.spinner("Searching for answers..."):
                 relevant_chunks = get_relevant_chunks(query, st.session_state.index)
                 response = generate_response_from_chunks(relevant_chunks, query)
@@ -54,9 +56,13 @@ if pdf_files:
                 st.audio(audio_io, format='audio/mp3')
                 st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
 
-            if st.button("Ask another question"):
-                st.experimental_rerun()
-            
-            if st.button("End conversation"):
-                st.session_state.index = None
-                st.stop()  # Close the Streamlit app
+        if ask_button:
+            st.session_state.query = ""  # Clear the query input to allow asking another question
+
+        if end_button:
+            st.session_state.index = None
+            st.session_state.query = ""
+            st.experimental_rerun()  # Reset the app by rerunning
+
+else:
+    st.info("Please upload one or more PDF files to start.")
