@@ -6,7 +6,7 @@ huggingface-hub
 gTTS
 together
 transformers
-PyAudio
+sounddevice
 SpeechRecognition
-thread
 ipython
+numpy
