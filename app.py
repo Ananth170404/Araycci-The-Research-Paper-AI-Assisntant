@@ -11,7 +11,7 @@ if 'video_played' not in st.session_state:
     st.session_state.video_played = False
 
 if not st.session_state.video_played:
-    st.video("your_video.mp4", start_time=0)
+    st.video("araycci.mp4", start_time=0)
     if st.button("Start App"):
         st.session_state.video_played = True
         st.experimental_rerun()
