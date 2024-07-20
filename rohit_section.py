@@ -78,13 +78,20 @@ def generate_response_from_chunks(chunks, query):
     response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
 
-def process_pdfs(pdf_files, query):
-    index = create_index()
+def process_pdfs(pdf_files, query, index):
+    nested_texts = []
+
+    # Extract and clean text from each PDF, store in a nested list
     for pdf_file in pdf_files:
         text = extract_text_from_pdf(pdf_file)
         cleaned_text = clean_text(text)
-        chunks = chunk_text(cleaned_text)
+        nested_texts.append(cleaned_text)
+
+    # Chunk each list of texts and store in Pinecone
+    for text in nested_texts:
+        chunks = chunk_text(text)
         store_chunks_in_pinecone(chunks, index)
+
     relevant_chunks = get_relevant_chunks(query, index)
     response = generate_response_from_chunks(relevant_chunks, query)
     return response
