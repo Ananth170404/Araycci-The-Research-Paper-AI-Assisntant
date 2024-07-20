@@ -35,6 +35,9 @@ if pdf_files:
     
     # Query handling
     if st.session_state.index:
+        if 'query' not in st.session_state:
+            st.session_state.query = ""
+
         query = st.text_input("Enter your question:", key="query")
         ask_button = st.button("Ask")
         end_button = st.button("End conversation")
