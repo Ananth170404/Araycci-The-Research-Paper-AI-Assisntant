@@ -48,7 +48,7 @@ if pdf_file:
             st.session_state.query = None
 
         speech = st.checkbox("Voice")
-        
+
         if speech:
             # Display the HTML recorder
             with open("recorder.html", "r") as f:
@@ -66,8 +66,8 @@ if pdf_file:
                     f.write(audio_file.getbuffer())
 
                 query = transcribe_audio("uploaded_audio.wav", language_map[lang])
-                st.write("Transcription:")
-                st.write(query)
+                st.markdown(f"<p style='color:white;'>Transcription:</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:white;'>{query}</p>", unsafe_allow_html=True)
 
         else:
             query = st.text_input("Enter your question:")
