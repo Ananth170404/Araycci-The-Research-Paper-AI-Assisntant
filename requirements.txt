@@ -13,3 +13,4 @@ numpy
 scipy
 pyaudio
 pydub
+streamlit-player
