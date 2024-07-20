@@ -7,11 +7,16 @@ st.sidebar.image("logo.jpg")
 st.title("Aryacci Research Paper Bot")
 st.sidebar.title("PDF Research Assistant")
 
+# Check if the video has been played
 if 'video_played' not in st.session_state:
     st.session_state.video_played = False
 
+# Play video on initial access
 if not st.session_state.video_played:
+    # Video to be played full screen
     st.video("araycci.mp4", start_time=0)
+    
+    # Button to proceed after video is watched
     if st.button("Start App"):
         st.session_state.video_played = True
         st.experimental_rerun()
@@ -69,6 +74,7 @@ else:
             if end_button:
                 st.session_state.index = None
                 st.session_state.query = ""
+                st.session_state.video_played = False  # Reset video played state
                 st.experimental_rerun()  # Reset the app by rerunning
 
     else:
