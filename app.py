@@ -4,13 +4,13 @@ from translate import translate, generate_audio
 
 # Streamlit app
 
-# Display the custom logo using st.image
+# Display the custom logo using st.sidebar.image
 st.sidebar.image("logo.jpg")
-st.title("Aryacci Research Paper Assistant")
-st.sidebar.title("Research Assistant")
+st.title("Aryacci Research Paper Bot")
+st.sidebar.title("PDF Research Assistant")
 pdf_files = st.sidebar.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
 
-lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
+lang = st.sidebar.radio("Choose Language", ["English", "French", "Spanish"])
 
 if pdf_files:
     if 'index' not in st.session_state:
@@ -56,8 +56,8 @@ if pdf_files:
                 st.audio(audio_io, format='audio/mp3')
                 st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
 
-        if ask_button:
-            st.session_state.query = ""  # Clear the query input to allow asking another question
+            # Clear the query input after displaying the response
+            st.session_state.query = "" 
 
         if end_button:
             st.session_state.index = None
