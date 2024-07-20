@@ -67,8 +67,8 @@ def generate_response_from_chunks(chunks, query):
     combined_content = "\n".join([f"Chunk:\n{chunk}" for chunk in chunks])
     prompt_template = (
         "You are an AI research assistant. Your job is to help users understand and extract key insights from research papers. "
-        "You will be given a query and context from the research paper. Based on this information, provide accurate, concise, and helpful responses. "
-        "Here is the context from the research paper and the user's query:\n\n"
+        "You will be given a query and context from multiple research papers. Based on this information, provide accurate, concise, and helpful responses. "
+        "Here is the context from the research papers and the user's query:\n\n"
         "Context:\n{context}\n\n"
         "Query: {query}\n\n"
         "Please provide a detailed and informative response based on the given context."
@@ -77,3 +77,14 @@ def generate_response_from_chunks(chunks, query):
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
     response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
+
+def process_pdfs(pdf_files, query):
+    index = create_index()
+    for pdf_file in pdf_files:
+        text = extract_text_from_pdf(pdf_file)
+        cleaned_text = clean_text(text)
+        chunks = chunk_text(cleaned_text)
+        store_chunks_in_pinecone(chunks, index)
+    relevant_chunks = get_relevant_chunks(query, index)
+    response = generate_response_from_chunks(relevant_chunks, query)
+    return response
