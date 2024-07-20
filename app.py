@@ -4,68 +4,55 @@ from translate import translate, generate_audio
 
 # Streamlit app
 
-# Display the custom logo using st.sidebar.image
+# Display the custom logo using st.image
 st.sidebar.image("logo.jpg")
 st.title("Aryacci Research Paper Bot")
 st.sidebar.title("PDF Research Assistant")
-pdf_files = st.sidebar.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
 
-lang = st.sidebar.radio("Choose Language", ["English", "French", "Spanish"])
+pdf_file = st.sidebar.file_uploader("Upload a PDF", type="pdf")
 
-if pdf_files:
+lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
+
+if pdf_file:
+
     if 'index' not in st.session_state:
         st.session_state.index = None
 
     if st.session_state.index is None:
-        with st.spinner("Processing PDFs..."):
-            combined_chunks = []
-            for pdf_file in pdf_files:
-                text = extract_text_from_pdf(pdf_file)
-                cleaned_text = clean_text(text)
-                chunks = chunk_text(cleaned_text)
-                combined_chunks.extend(chunks)
+        with st.spinner("Processing PDF..."):
+            text = extract_text_from_pdf(pdf_file)
+            cleaned_text = clean_text(text)
+            chunks = chunk_text(cleaned_text)
             
             # Create Pinecone index and store chunks
             st.session_state.index = create_index()
             if st.session_state.index:
-                store_chunks_in_pinecone(combined_chunks, st.session_state.index)
-                st.success("PDFs processed and indexed successfully!")
+                store_chunks_in_pinecone(chunks, st.session_state.index)
+                st.success("PDF processed and indexed successfully!")
             else:
                 st.error("Failed to create Pinecone index.")
-    
-    # Query handling
-    if st.session_state.index:
-        if 'query' not in st.session_state:
-            st.session_state.query = ""
 
-        query = st.text_input("Enter your question:", key="query")
-        ask_button = st.button("Ask")
-        end_button = st.button("End conversation")
-
-        if ask_button and query:
-            with st.spinner("Searching for answers..."):
-                relevant_chunks = get_relevant_chunks(query, st.session_state.index)
-                response = generate_response_from_chunks(relevant_chunks, query)
+# Query handling
+if st.session_state.index:
+    query = st.text_input("Enter your question:")
+    if st.button("Ask"):
+        with st.spinner("Searching for answers..."):
+            relevant_chunks = get_relevant_chunks(query, st.session_state.index)
+            response = generate_response_from_chunks(relevant_chunks, query)
+            
+            if lang != "English":
+                translated_response = translate(response, lang)
+                st.write(translated_response)
+                audio_io = generate_audio(translated_response, lang)
+            else:
+                st.write(response)
+                audio_io = generate_audio(response, lang)
                 
-                if lang != "English":
-                    translated_response = translate(response, lang)
-                    st.write(translated_response)
-                    audio_io = generate_audio(translated_response, lang)
-                else:
-                    st.write(response)
-                    audio_io = generate_audio(response, lang)
-                    
-                # Generate and display audio response
-                st.audio(audio_io, format='audio/mp3')
-                st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
+            # Generate and display audio response
+            st.audio(audio_io, format='audio/mp3')
+            st.download_button(label="Download Audio Response", data=audio_io, file_name="response.mp3", mime="audio/mp3")
 
-            # Clear the query input after displaying the response
-            st.session_state.query = "" 
-
-        if end_button:
-            st.session_state.index = None
-            st.session_state.query = ""
-            st.experimental_rerun()  # Reset the app by rerunning
-
-else:
-    st.info("Please upload one or more PDF files to start.")
+# End conversation button to clear session state
+if st.sidebar.button("End conversation"):
+    st.session_state.index = None
+    st.success("Conversation ended. Please upload a new PDF to start a new session.")
