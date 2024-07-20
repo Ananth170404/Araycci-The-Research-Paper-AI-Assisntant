@@ -1,20 +1,20 @@
-import sounddevice as sd
+import pyaudio
 import wave
 import speech_recognition as sr
 import threading
-import numpy as np
-from scipy.io.wavfile import write
 import IPython.display as ipd
 
 # Parameters
-FORMAT = np.int16
+FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 WAVE_OUTPUT_FILENAME = "output.wav"
 
+audio = pyaudio.PyAudio()
 frames = []
 recording = False
+stream = None
 record_thread = None
 language = 'en-US'
 
@@ -27,36 +27,39 @@ language_map = {
 }
 
 def start_recording():
-    global recording, frames, record_thread
+    global recording, stream, frames, record_thread
     if not recording:
         recording = True
         frames = []
+        stream = audio.open(format=FORMAT, channels=CHANNELS,
+                            rate=RATE, input=True,
+                            frames_per_buffer=CHUNK)
         print("Recording started. Speak into the microphone.")
         record_thread = threading.Thread(target=record_audio)
         record_thread.start()
 
 def record_audio():
-    global recording, frames
+    global recording, stream, frames
     while recording:
-        data = sd.rec(CHUNK, samplerate=RATE, channels=CHANNELS, dtype=FORMAT)
-        sd.wait()
+        data = stream.read(CHUNK)
         frames.append(data)
 
 def stop_recording():
-    global recording, record_thread
+    global recording, stream, record_thread
     if recording:
         recording = False
         record_thread.join()
-        try:
-            frames_np = np.concatenate(frames, axis=0)
-            write(WAVE_OUTPUT_FILENAME, RATE, frames_np)
-            print("Recording stopped.")
-            play_audio()
-            text = transcribe_audio()
-            return text
-        except ValueError as e:
-            print(f"Error concatenating frames: {e}")
-            return ""
+        stream.stop_stream()
+        stream.close()
+        with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(audio.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+        print("Recording stopped.")
+        play_audio()
+        text=transcribe_audio()
+        return text
 
 def play_audio():
     ipd.display(ipd.Audio(WAVE_OUTPUT_FILENAME))
@@ -71,6 +74,6 @@ def transcribe_audio():
         except sr.UnknownValueError:
             print("Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
-            print(f"Could not request results from Google Speech Recognition service; {e}")
+            print("Could not request results from Google Speech Recognition service; {0}".format(e))
 
     return text
