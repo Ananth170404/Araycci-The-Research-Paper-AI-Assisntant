@@ -2,9 +2,9 @@ import sounddevice as sd
 import wave
 import speech_recognition as sr
 import threading
-import IPython.display as ipd
 import numpy as np
 from scipy.io.wavfile import write
+import IPython.display as ipd
 
 # Parameters
 FORMAT = np.int16
@@ -47,12 +47,16 @@ def stop_recording():
     if recording:
         recording = False
         record_thread.join()
-        frames_np = np.concatenate(frames, axis=0)
-        write(WAVE_OUTPUT_FILENAME, RATE, frames_np)
-        print("Recording stopped.")
-        play_audio()
-        text = transcribe_audio()
-        return text
+        try:
+            frames_np = np.concatenate(frames, axis=0)
+            write(WAVE_OUTPUT_FILENAME, RATE, frames_np)
+            print("Recording stopped.")
+            play_audio()
+            text = transcribe_audio()
+            return text
+        except ValueError as e:
+            print(f"Error concatenating frames: {e}")
+            return ""
 
 def play_audio():
     ipd.display(ipd.Audio(WAVE_OUTPUT_FILENAME))
@@ -67,6 +71,6 @@ def transcribe_audio():
         except sr.UnknownValueError:
             print("Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
-            print("Could not request results from Google Speech Recognition service; {0}".format(e))
+            print(f"Could not request results from Google Speech Recognition service; {e}")
 
     return text
