@@ -124,7 +124,7 @@ def generate_response_from_chunks(chunks, query):
     )
     user_query = prompt_template.format(context=combined_content, query=query)
     
-    huggingface_token = st.secrets["general"]["huggingface_token"]
+    huggingface_token = st.secrets["general"]["HUGGINGFACE_TOKEN"]
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token=huggingface_token)
 
     # Generate the response
