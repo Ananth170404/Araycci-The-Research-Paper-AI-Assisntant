@@ -9,8 +9,11 @@ import sys
 import json
 
 # Initialize Pinecone
-pinecone_api_key = os.getenv("PINECONE_API_KEY")
+# Initialize Pinecone
+pinecone_api_key = st.secrets["general"]["PINECONE_API_KEY"]
 pinecone_environment = "us-east-1"
+if not pinecone_api_key:
+    raise ValueError("Pinecone API key not found. Please set it in the environment variables.")
 pc = Pinecone(api_key=pinecone_api_key)
 
 # Model initialization
@@ -120,7 +123,7 @@ def generate_response_from_chunks(chunks, query):
         "Please provide a detailed and informative response based on the given context."
     )
     user_query = prompt_template.format(context=combined_content, query=query)
-    huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
+    huggingface_token = st.secrets["general"]["HUGGINGFACE_TOKEN"]
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token=huggingface_token)
     response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
