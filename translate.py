@@ -49,6 +49,8 @@ def translate(text, lang):
     return response_text
 
 def generate_audio(text, lang):
+    if not text:
+        raise ValueError("No text to speak.")
     languages = {"English": "en", "French": "fr", "Spanish": "es"}
     tts = gTTS(text=text, lang=languages[lang])
     audio_io = io.BytesIO()
