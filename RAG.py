@@ -111,8 +111,12 @@ def generate_response_from_chunks(chunks, query):
     # Calculate the remaining tokens for output generation
     max_new_tokens = max_total_tokens - input_tokens
     
+    # Ensure max_new_tokens is not negative
     if max_new_tokens <= 0:
         return "Input text is too long. Please reduce the size of the input."
+    
+    # Use a reasonable value for max_new_tokens if it's too large
+    max_new_tokens = min(max_new_tokens, 4096)
     
     response = client.chat_completion(
         messages=[{"role": "user", "content": user_query}], 
@@ -121,6 +125,7 @@ def generate_response_from_chunks(chunks, query):
     )
     
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
+
 
 
 
