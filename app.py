@@ -1,5 +1,5 @@
 import streamlit as st
-from RAG import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, chunk_text, store_chunks_in_pinecone
+from RAG import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, combined_chunking, store_chunks_in_pinecone
 from translate import translate, generate_audio
 from ARAYCCI_ALL import search_arxiv, process_docs, clustering, sanitize_filename, list_pdfs
 import os
@@ -54,7 +54,7 @@ def process_local_pdfs(data):
     for pdf_file in data:
         text = extract_text_from_pdf(pdf_file)
         cleaned_text = clean_text(text)
-        chunks = chunk_text(cleaned_text)
+        chunks = combined_chunking(cleaned_text)
         combined_chunks.extend(chunks)
     return combined_chunks
 
