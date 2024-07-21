@@ -8,16 +8,15 @@ def translate(text, lang):
     # Load the Together API key from the environment variables
     together_api_key = "dc4921bdc25d60750f8610d2f7212a8c26b6b8949450d31387fba18ee42a0b07"
 
-    # SETTING UP MODEL
     client = Together(api_key=together_api_key)
 
-    # SETTING SYSTEM PROMPT
-    prompt = "You are a translator bot, translate " + text + " to " + lang + " Only give the translated text."
+    # Setting up the prompt
+    prompt = f"Translate the following text to {lang}: {text}"
 
     messages = [
         {
             "role": "system",
-            "content": "You are a translator bot. ONLY GIVE THE TRANSLATED OUTPUT AND NOTHING ELSE"
+            "content": "You are a translator bot. Provide only the translated text."
         },
         {
             "role": "user",
@@ -25,36 +24,42 @@ def translate(text, lang):
         }
     ]
 
-    max_t = 8192 - token_size(prompt)
+    max_tokens = 8192 - token_size(prompt)  # Adjust max_tokens to fit within the limit
 
-    # GET RESPONSE
-    response = client.chat.completions.create(
-        model="meta-llama/Llama-3-8b-chat-hf",
-        messages=messages,
-        max_tokens=max_t,
-        temperature=0.2,
-        top_p=0.7,
-        top_k=50,
-        repetition_penalty=1.3,
-        stop=[""],
-        stream=True
-    )
+    try:
+        # Get response
+        response = client.chat.completions.create(
+            model="meta-llama/Llama-3-8b-chat-hf",
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=0.2,
+            top_p=0.7,
+            top_k=50,
+            repetition_penalty=1.3,
+            stop=[""],
+            stream=True
+        )
 
-    response_text = ""
-    for chunk in response:
-        for choice in chunk.choices:
-            if choice.text:
-                response_text += choice.text
-    if not response_text.strip():
-        raise ValueError("The translation response is empty.")
+        response_text = ""
+        for chunk in response:
+            for choice in chunk.choices:
+                if choice.text:
+                    response_text += choice.text
 
-    return response_text
+        if not response_text.strip():
+            raise ValueError("The translation response is empty.")
+
+        return response_text
+
+    except Exception as e:
+        st.error(f"Translation failed: {str(e)}")
+        return "Translation error."
 
 def generate_audio(text, lang):
     if not text:
         raise ValueError("No text to speak.")
     languages = {"English": "en", "French": "fr", "Spanish": "es"}
-    tts = gTTS(text=text, lang=languages[lang])
+    tts = gTTS(text=text, lang=languages.get(lang, "en"))
     audio_io = io.BytesIO()
     tts.write_to_fp(audio_io)
     audio_io.seek(0)
