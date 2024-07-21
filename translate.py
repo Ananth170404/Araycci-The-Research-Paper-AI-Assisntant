@@ -45,6 +45,8 @@ def translate(text, lang):
         for choice in chunk.choices:
             if choice.text:
                 response_text += choice.text
+    if not response_text.strip():
+        raise ValueError("The translation response is empty.")
 
     return response_text
 
