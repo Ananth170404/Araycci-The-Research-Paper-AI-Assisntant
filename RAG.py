@@ -1,5 +1,6 @@
 import fitz  # PyMuPDF
 import re
+import streamlit as st
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone, ServerlessSpec
 from huggingface_hub import InferenceClient
@@ -30,7 +31,6 @@ def create_index():
     return pc.Index(index_name)
 
 def extract_text_from_pdf(pdf_file):
-
     if isinstance(pdf_file, str):
         doc = fitz.open(pdf_file)  # Open the PDF file using the file path
     else:
@@ -46,15 +46,36 @@ def clean_text(text):
     text = text.strip()
     return text
 
-def chunk_text(text, max_chunk_size=512, overlap=128):
+def title_based_chunking(text):
+    chunks = re.split(r'(?<=\n)\s*(?=\w)', text)
+    return [chunk.strip() for chunk in chunks if chunk.strip()]
+
+def section_based_chunking(text):
+    sections = re.split(r'\n\s*\n', text)  # Split by blank lines
+    return [section.strip() for section in sections if section.strip()]
+
+def semantic_chunking(text, max_chunk_size=512, overlap=128):
     words = text.split(' ')
     chunks = []
     i = 0
     while i < len(words):
         chunk = ' '.join(words[i:i + max_chunk_size])
+        if i > 0:
+            previous_chunk = ' '.join(words[max(0, i - overlap):i])
+            chunk = previous_chunk + ' ' + chunk
         chunks.append(chunk)
         i += max_chunk_size - overlap
     return chunks
+
+def combined_chunking(text):
+    title_chunks = title_based_chunking(text)
+    final_chunks = []
+    for chunk in title_chunks:
+        section_chunks = section_based_chunking(chunk)
+        for section_chunk in section_chunks:
+            semantic_chunks = semantic_chunking(section_chunk)
+            final_chunks.extend(semantic_chunks)
+    return final_chunks
 
 def store_chunks_in_pinecone(chunks, index):
     chunk_embeddings = model.encode(chunks)
@@ -80,7 +101,7 @@ def generate_response_from_chunks(chunks, query):
     )
     user_query = prompt_template.format(context=combined_content, query=query)
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
-    response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
+    response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=6000, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
 
 def process_pdfs(pdf_files, query, index):
@@ -94,7 +115,7 @@ def process_pdfs(pdf_files, query, index):
 
     # Chunk each list of texts and store in Pinecone
     for text in nested_texts:
-        chunks = chunk_text(text)
+        chunks = combined_chunking(text)
         store_chunks_in_pinecone(chunks, index)
 
     relevant_chunks = get_relevant_chunks(query, index)
