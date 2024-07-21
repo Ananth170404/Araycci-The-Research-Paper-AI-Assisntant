@@ -121,6 +121,18 @@ We welcome contributions to improve Arayacci Research Paper Bot. To contribute:
     ```
 5. **Create a new Pull Request**.
 
+## Team
+
+The Arayacci Research Paper Bot was developed by:
+
+- **Ananth Shyam**
+- **Rohith Jeevanantham**
+- **Samyuktha**
+- **Arush Ajith**
+- **Adithya Venkatesh**
+- **Avinash Krishna**
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
