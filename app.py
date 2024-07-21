@@ -39,8 +39,8 @@ def reset_page():
 
 # Streamlit app
 st.sidebar.image("logo.jpg")
-st.title("Arayacci Research Paper Bot")
-st.sidebar.title("PDF Research Assistant")
+st.title("Araycci Research Paper Bot")
+st.sidebar.title("Research Assistant")
 
 lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
 
