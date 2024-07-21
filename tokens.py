@@ -3,7 +3,7 @@ from transformers import AutoTokenizer
 
 def token_size(input_text):
     # Load the Hugging Face token from the environment variables
-    huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
+    huggingface_token = "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"
 
     # Load the pre-trained tokenizer
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", token=huggingface_token)
