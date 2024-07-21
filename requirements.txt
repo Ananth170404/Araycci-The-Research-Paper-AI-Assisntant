@@ -14,3 +14,13 @@ scipy
 pyaudio
 pydub
 streamlit-player
+requests
+feedparser
+PyMuPDF
+PyPDF2
+pandas
+scikit-learn
+nltk
+numpy
+matplotlib
+seaborn
