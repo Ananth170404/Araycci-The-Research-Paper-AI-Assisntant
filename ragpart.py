@@ -10,7 +10,7 @@ import json
 
 # Initialize Pinecone
 # Initialize Pinecone
-pinecone_api_key = st.secrets["general"]["pinecone_api_key"]
+pinecone_api_key = st.secrets["general"]["PINECONE_API_KEY"]
 pinecone_environment = "us-east-1"
 if not pinecone_api_key:
     raise ValueError("Pinecone API key not found. Please set it in the environment variables.")
