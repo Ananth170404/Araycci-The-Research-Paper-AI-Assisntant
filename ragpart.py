@@ -120,13 +120,29 @@ def generate_response_from_chunks(chunks, query):
         "Here is the context from the research papers and the user's query:\n\n"
         "Context:\n{context}\n\n"
         "Query: {query}\n\n"
-        "Please provide a detailed and informative response based on the given context."
+        "Please provide a detailed and informative response based on the given context. Make sure your response is complete and ends with 'End of response.'."
     )
     user_query = prompt_template.format(context=combined_content, query=query)
+    
     huggingface_token = st.secrets["general"]["huggingface_token"]
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token=huggingface_token)
-    response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
-    return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
+
+    # Generate the response
+    response = client.chat_completion(
+        messages=[{"role": "user", "content": user_query}], 
+        max_tokens=500,  # Keep the max_tokens as specified
+        stream=False
+    )
+
+    # Check if response is received and contains the end signal
+    if response and 'choices' in response and response['choices']:
+        content = response['choices'][0]['message']['content']
+        if 'End of response.' in content:
+            content = content.split('End of response.')[0].strip()
+        return content
+    else:
+        return "No response received."
+
 
 def process_pdfs(pdf_files, query, index):
     nested_texts = []
