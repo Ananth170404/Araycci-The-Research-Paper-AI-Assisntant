@@ -3,7 +3,7 @@ from together import Together
 from gtts import gTTS
 import io
 from tokens import token_size
-
+import streamlit as st
 def translate(text, lang):
     # Load the Together API key from the environment variables
     together_api_key = st.secrets["general"]["together_api_key"]
