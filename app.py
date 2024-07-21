@@ -39,8 +39,8 @@ def reset_page():
 
 # Streamlit app
 st.sidebar.image("logo.jpg")
-st.title("Araycci Research Paper Bot")
-st.sidebar.title("Research Assistant")
+st.title("Arayacci Research Paper Bot")
+st.sidebar.title("PDF Research Assistant")
 
 lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
 
@@ -115,10 +115,11 @@ if Source == "Local":
                 if st.button("Process Cluster") and selected_cluster:
                     st.write(f"Processing cluster: {selected_cluster}")
                     selected_cluster = int(selected_cluster)
-                    result_df = result_df[result_df['Cluster'] == selected_cluster]
+                    cluster_indices = result_df[result_df['Cluster'] == selected_cluster].index.tolist()
+                    selected_pdfs = [uploaded_file for i, uploaded_file in enumerate(data) if i in cluster_indices]
 
                     with st.spinner("Processing PDFs..."):
-                        combined_chunks = process_local_pdfs([uploaded_file for i, uploaded_file in enumerate(data) if i in selected_cluster])
+                        combined_chunks = process_local_pdfs(selected_pdfs)
                         st.session_state.index = create_index()
                         if st.session_state.index:
                             store_chunks_in_pinecone(combined_chunks, st.session_state.index)
