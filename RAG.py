@@ -101,7 +101,7 @@ def generate_response_from_chunks(chunks, query):
     )
     user_query = prompt_template.format(context=combined_content, query=query)
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
-    response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=6000, stream=False)
+    response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=8192, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
 
 def process_pdfs(pdf_files, query, index):
