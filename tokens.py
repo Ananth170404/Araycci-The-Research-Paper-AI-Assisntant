@@ -1,9 +1,12 @@
+import os
 from transformers import AutoTokenizer
 
-
 def token_size(input_text):
+    # Load the Hugging Face token from the environment variables
+    huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
+
     # Load the pre-trained tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", token=huggingface_token)
 
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -17,8 +20,4 @@ def token_size(input_text):
         padding='max_length'
     )['input_ids'].flatten().tolist()
 
-    return len(tokens)+40
-
-
-# prompt="You are a translator bot, translate Hi! My name is to French Only give the translated text."
-# print(token_size(prompt))
+    return len(tokens) + 40
