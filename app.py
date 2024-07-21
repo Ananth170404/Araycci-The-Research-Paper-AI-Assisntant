@@ -58,21 +58,24 @@ language_map = {
     'French': 'fr-FR'
 }
 
-def process_local_pdfs(data):
+def process_local_pdfs(uploaded_files):
     combined_chunks = []
-    if isinstance(data, pd.DataFrame):
-        data= data.to_dict()
-        data = data['text']
-
-    for pdf_file in data:
-        if isinstance(data[pdf_file], str):
-            text = data[pdf_file]  
-        else:
-            text = extract_text_from_pdf(pdf_file)
-        cleaned_text = clean_text(text)
-        chunks = combined_chunking(cleaned_text)
-        combined_chunks.extend(chunks)
+    
+    # Check if uploaded_files is a list of UploadedFile objects
+    if isinstance(uploaded_files, list):
+        for uploaded_file in uploaded_files:
+            # Ensure the file is an instance of UploadedFile
+            if isinstance(uploaded_file, st.uploaded_file_manager.UploadedFile):
+                # Extract text from the file
+                text = extract_text_from_pdf(uploaded_file)
+                cleaned_text = clean_text(text)
+                chunks = combined_chunking(cleaned_text)
+                combined_chunks.extend(chunks)
+    else:
+        st.error("Uploaded files should be a list of UploadedFile objects.")
+    
     return combined_chunks
+
 
 def download_and_process_arxiv(selection, arxiv_results):
     zip_file = process_docs2(selection, arxiv_results)
@@ -106,7 +109,7 @@ if Source == "Local":
             pdf_texts = text_from_file_uploader(data)
             processed_documents = tokenize_text(pdf_texts)
             result_df, fig = clustering(pdf_texts, processed_documents)
-            if fig!="Error":
+            if fig != "Error":
                 st.pyplot(fig)
                 st.write(result_df)
                 selected_cluster = st.text_input("Enter Cluster number")
@@ -116,7 +119,7 @@ if Source == "Local":
                     result_df = result_df[result_df['Cluster'] == selected_cluster]
 
                     with st.spinner("Processing PDFs..."):
-                        combined_chunks = process_local_pdfs(result_df)
+                        combined_chunks = process_local_pdfs([uploaded_file for i, uploaded_file in enumerate(data) if i in selected_cluster])
                         st.session_state.index = create_index()
                         if st.session_state.index:
                             store_chunks_in_pinecone(combined_chunks, st.session_state.index)
@@ -128,7 +131,6 @@ if Source == "Local":
             else:
                 st.write("Too Few Papers for Clustering")
 
-
         else:
             with st.spinner("Processing PDFs..."):
                 combined_chunks = process_local_pdfs(data)
@@ -139,6 +141,7 @@ if Source == "Local":
                     st.success("PDF processed and indexed successfully!")
                 else:
                     st.error("Failed to create Pinecone index.")
+
 
 # Handle Web Search and Download
 if Source == "Web":
