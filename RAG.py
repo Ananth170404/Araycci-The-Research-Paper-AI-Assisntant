@@ -1,3 +1,4 @@
+import os
 import fitz  # PyMuPDF
 import re
 import streamlit as st
@@ -8,7 +9,7 @@ import sys
 import json
 
 # Initialize Pinecone
-pinecone_api_key = "b887f4da-c8c8-4e25-954b-1c0c15df7312"
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
 pinecone_environment = "us-east-1"
 pc = Pinecone(api_key=pinecone_api_key)
 
@@ -119,7 +120,8 @@ def generate_response_from_chunks(chunks, query):
         "Please provide a detailed and informative response based on the given context."
     )
     user_query = prompt_template.format(context=combined_content, query=query)
-    client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
+    huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
+    client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token=huggingface_token)
     response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
 
