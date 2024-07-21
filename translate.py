@@ -37,7 +37,7 @@ def translate(text, lang):
             top_p=0.7,
             top_k=50,
             repetition_penalty=1.3,
-            stop=[""],
+            stop=["<|eot_id|>"],
             stream=True
         )
 
