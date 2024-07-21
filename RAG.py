@@ -4,6 +4,8 @@ import streamlit as st
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone, ServerlessSpec
 from huggingface_hub import InferenceClient
+import sys
+import json
 
 # Initialize Pinecone
 pinecone_api_key = "b887f4da-c8c8-4e25-954b-1c0c15df7312"
@@ -77,11 +79,28 @@ def combined_chunking(text):
             final_chunks.extend(semantic_chunks)
     return final_chunks
 
-def store_chunks_in_pinecone(chunks, index):
+def store_chunks_in_pinecone(chunks, index, max_batch_size_mb=2):
     chunk_embeddings = model.encode(chunks)
     vectors = [{"id": f"chunk-{i}", "values": embedding.tolist(), "metadata": {"content": chunk, "type": "chunk"}}
                for i, (embedding, chunk) in enumerate(zip(chunk_embeddings, chunks))]
-    index.upsert(vectors)
+
+    # Split vectors into batches that are under the maximum batch size
+    max_batch_size_bytes = max_batch_size_mb * 1024 * 1024
+    current_batch = []
+    current_batch_size = 0
+
+    for vector in vectors:
+        vector_size = sys.getsizeof(json.dumps(vector))
+        if current_batch_size + vector_size > max_batch_size_bytes:
+            index.upsert(current_batch)
+            current_batch = [vector]
+            current_batch_size = vector_size
+        else:
+            current_batch.append(vector)
+            current_batch_size += vector_size
+
+    if current_batch:
+        index.upsert(current_batch)
 
 def get_relevant_chunks(query, index, top_k=5):
     query_embedding = model.encode([query])[0].tolist()
@@ -103,7 +122,6 @@ def generate_response_from_chunks(chunks, query):
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
     response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=500, stream=False)
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
-
 
 def process_pdfs(pdf_files, query, index):
     nested_texts = []
