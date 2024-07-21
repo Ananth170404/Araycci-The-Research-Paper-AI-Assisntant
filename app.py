@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from RAG import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, store_chunks_in_pinecone, combined_chunking
+from ragpart import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, store_chunks_in_pinecone, combined_chunking
 from translate import translate, generate_audio
 from arxiv import search_arxiv, process_docs2, clustering, text_from_file_uploader, tokenize_text
 
