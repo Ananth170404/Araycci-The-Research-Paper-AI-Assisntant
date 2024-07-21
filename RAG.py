@@ -12,8 +12,8 @@ pinecone_api_key = "b887f4da-c8c8-4e25-954b-1c0c15df7312"
 pinecone_environment = "us-east-1"
 pc = Pinecone(api_key=pinecone_api_key)
 
-# Use a higher-dimensional and powerful model
-model = SentenceTransformer('sentence-transformers/stsb-roberta-large')
+# Model initialization
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Pinecone index name
 index_name = "llama3"
@@ -23,7 +23,7 @@ def create_index():
         pc.delete_index(index_name)
     pc.create_index(
         name=index_name, 
-        dimension=1024,  # Adjust dimension to match the new model
+        dimension=384,
         metric='cosine', 
         spec=ServerlessSpec(
             cloud='aws',
