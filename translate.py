@@ -6,7 +6,7 @@ from tokens import token_size
 import streamlit as st
 def translate(text, lang):
     # Load the Together API key from the environment variables
-    together_api_key = st.secrets["general"]["together_api_key"]
+    together_api_key = st.secrets["general"]["TOGETHER_API_KEY"]
 
     # SETTING UP MODEL
     client = Together(api_key=together_api_key)
