@@ -1,9 +1,8 @@
 import streamlit as st
+import pandas as pd
 from RAG import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, store_chunks_in_pinecone, combined_chunking
 from translate import translate, generate_audio
-from stt import start_recording, stop_recording
-from ARAYCCI_ALL import search_arxiv, process_docs, clustering, sanitize_filename, list_pdfs
-import os
+from arxiv import search_arxiv, process_docs2, clustering, text_from_file_uploader, tokenize_text
 
 # Initialize session state
 if 'index' not in st.session_state:
@@ -22,10 +21,10 @@ if 'fig' not in st.session_state:
     st.session_state.fig = None
 if 'selected_cluster' not in st.session_state:
     st.session_state.selected_cluster = None
-if 'save_dir' not in st.session_state:
-    st.session_state.save_dir = None
 if 'selected_indices' not in st.session_state:
     st.session_state.selected_indices = []
+if 'cluster' not in st.session_state:
+    st.session_state.cluster = None
 
 def reset_page():
     st.session_state.index = None
@@ -35,8 +34,8 @@ def reset_page():
     st.session_state.result_df = None
     st.session_state.fig = None
     st.session_state.selected_cluster = None
-    st.session_state.save_dir = None
     st.session_state.selected_indices = []
+    st.session_state.cluster = None
 
 # Streamlit app
 st.sidebar.image("logo.jpg")
@@ -61,19 +60,29 @@ language_map = {
 
 def process_local_pdfs(data):
     combined_chunks = []
+    if isinstance(data, pd.DataFrame):
+        data= data.to_dict()
+        data = data['text']
+
     for pdf_file in data:
-        text = extract_text_from_pdf(pdf_file)
+        if isinstance(data[pdf_file], str):
+            text = data[pdf_file]  
+        else:
+            text = extract_text_from_pdf(pdf_file)
         cleaned_text = clean_text(text)
         chunks = combined_chunking(cleaned_text)
         combined_chunks.extend(chunks)
     return combined_chunks
 
-def download_and_process_arxiv(selection, arxiv_results, save_dir):
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    result_df, processed_documents = process_docs(selection, arxiv_results, save_dir)
-    result_df, fig = clustering(result_df, processed_documents)
-    return result_df, fig
+def download_and_process_arxiv(selection, arxiv_results):
+    zip_file = process_docs2(selection, arxiv_results)
+    st.download_button(
+        label="Download ZIP",
+        data=zip_file,
+        file_name="pdfs.zip",
+        mime="application/zip"
+    )
+
 
 def handle_query_response(query, lang):
     relevant_chunks = get_relevant_chunks(query, st.session_state.index)
@@ -91,9 +100,36 @@ def handle_query_response(query, lang):
 # Handle Local PDF Processing
 if Source == "Local":
     data = st.sidebar.file_uploader("Upload a PDF", type="pdf", accept_multiple_files=True)
-    if data:
-        if not st.session_state.papers_downloaded:
-            st.write("Processing PDFs...")
+    if data and not st.session_state.papers_downloaded:
+        
+        if st.toggle("Cluster By Similarity", value=True):
+            pdf_texts = text_from_file_uploader(data)
+            processed_documents = tokenize_text(pdf_texts)
+            result_df, fig = clustering(pdf_texts, processed_documents)
+            if fig!="Error":
+                st.pyplot(fig)
+                st.write(result_df)
+                selected_cluster = st.text_input("Enter Cluster number")
+                if st.button("Process Cluster") and selected_cluster:
+                    st.write(f"Processing cluster: {selected_cluster}")
+                    selected_cluster = int(selected_cluster)
+                    result_df = result_df[result_df['Cluster'] == selected_cluster]
+
+                    with st.spinner("Processing PDFs..."):
+                        combined_chunks = process_local_pdfs(result_df)
+                        st.session_state.index = create_index()
+                        if st.session_state.index:
+                            store_chunks_in_pinecone(combined_chunks, st.session_state.index)
+                            st.session_state.papers_downloaded = True
+                            st.success("PDF processed and indexed successfully!")
+                        else:
+                            st.error("Failed to create Pinecone index.")
+
+            else:
+                st.write("Too Few Papers for Clustering")
+
+
+        else:
             with st.spinner("Processing PDFs..."):
                 combined_chunks = process_local_pdfs(data)
                 st.session_state.index = create_index()
@@ -120,69 +156,26 @@ if Source == "Web":
             st.write(f"**Link:** [arXiv Paper]({result['link']})")
             selection[i] = st.checkbox("Download Paper", key=str(i+1))
         selected_indices = [i for i in selection if selection[i]]
-        save_dir = st.text_input("Enter the directory to save PDFs and images: ")
+       
         if st.button("Download Selection"):
-            if save_dir:
-                st.session_state.download = True
-                st.session_state.save_dir = save_dir
-                st.session_state.selected_indices = selected_indices
-                st.write(f"Directory set to: {st.session_state.save_dir}")
-                st.write(f"Selected indices: {st.session_state.selected_indices}")
-            else:
-                st.error("Please enter a directory to save PDFs and images.")
-        if st.session_state.download and st.session_state.save_dir and st.session_state.selected_indices:
-            st.write("Starting download and processing...")
+        
+            st.session_state.download = True
+            st.session_state.selected_indices = selected_indices
+            st.write(f"Selected indices: {st.session_state.selected_indices}")
+
+        if st.session_state.download and st.session_state.selected_indices:
             if not st.session_state.papers_downloaded:
                 with st.spinner("Downloading and processing papers..."):
-                    result_df, fig = download_and_process_arxiv(st.session_state.selected_indices, arxiv_results, st.session_state.save_dir)
-                    st.session_state.result_df = result_df
-                    st.session_state.fig = fig
-                    st.session_state.papers_downloaded = True
-                    st.session_state.download = False  # Reset the download flag
-                    st.success("Papers downloaded and processed successfully!")
-                    st.pyplot(st.session_state.fig)
-                    st.write(st.session_state.result_df)
+                    download_and_process_arxiv(st.session_state.selected_indices, arxiv_results)
+                st.success('Files Zipped And Ready To Download')
+                st.session_state.papers_downloaded = True
 
-        if st.session_state.papers_downloaded:
-            selected_cluster = st.text_input("Enter Cluster number")
-            if st.button("Process Cluster") and selected_cluster:
-                st.write(f"Processing cluster: {selected_cluster}")
-                selected_cluster = int(selected_cluster)
-                if st.session_state.result_df is not None:
-                    cluster_docs = st.session_state.result_df[st.session_state.result_df['Cluster'] == selected_cluster]
-                    save_cluster_dir = os.path.join(st.session_state.save_dir, f"Cluster_{selected_cluster}")
-                    if not os.path.exists(save_cluster_dir):
-                        os.makedirs(save_cluster_dir)
-                    for index, row in cluster_docs.iterrows():
-                        pdf_path = row['PDF File']
-                        sanitized_pdf_filename = sanitize_filename(os.path.basename(pdf_path))
-                        with open(os.path.join(save_cluster_dir, f"{sanitized_pdf_filename}.pdf"), 'wb') as pdf_file:
-                            pdf_file.write(open(pdf_path, 'rb').read())
-                    data = list_pdfs(save_cluster_dir)
-                    st.write(f"Processing PDFs in cluster directory: {save_cluster_dir}")
-                    with st.spinner("Processing PDFs..."):
-                        combined_chunks = process_local_pdfs(data)
-                        st.session_state.index = create_index()
-                        if st.session_state.index:
-                            store_chunks_in_pinecone(combined_chunks, st.session_state.index)
-                            st.session_state.papers_downloaded = True
-                            st.success("PDF processed and indexed successfully!")
-                        else:
-                            st.error("Failed to create Pinecone index.")
-
+            else:
+                st.write("You May Now Switch To Local To Proceed")
+                    
 # Query handling
 if st.session_state.index:
-    speech = st.checkbox("Voice")
-    query = st.text_input("Enter your question:") if not speech else ""
-    if speech:
-        if lang in language_map:
-            language = language_map[lang]
-        if st.button("Start Recording"):
-            start_recording()
-            st.write("Recording...")
-        if st.button("Stop Recording"):
-            query = stop_recording()
-            st.write(query)
+    query = st.text_input("Enter your question:")
     if query:
         st.session_state.query = query
     if st.button("Ask") and st.session_state.query:
