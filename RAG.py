@@ -102,20 +102,26 @@ def generate_response_from_chunks(chunks, query):
     user_query = prompt_template.format(context=combined_content, query=query)
     client = InferenceClient("meta-llama/Meta-Llama-3-8B-Instruct", token="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")
     
+    # Token limit constants
+    max_total_tokens = 8192
+    
     # Calculate the number of input tokens
     input_tokens = len(user_query.split())
-    max_total_tokens = 8192
-    max_input_tokens = 4096
+    
+    # Calculate the remaining tokens for output generation
     max_new_tokens = max_total_tokens - input_tokens
     
-    if input_tokens > max_input_tokens:
-        # Truncate the input to respect the token limit
-        user_query = " ".join(user_query.split()[:max_input_tokens])
-        input_tokens = len(user_query.split())
-        max_new_tokens = max_total_tokens - input_tokens
-
-    response = client.chat_completion(messages=[{"role": "user", "content": user_query}], max_tokens=max_new_tokens, stream=False)
+    if max_new_tokens <= 0:
+        return "Input text is too long. Please reduce the size of the input."
+    
+    response = client.chat_completion(
+        messages=[{"role": "user", "content": user_query}], 
+        max_tokens=max_new_tokens, 
+        stream=False
+    )
+    
     return response['choices'][0]['message']['content'] if response['choices'] else "No response received."
+
 
 
 def process_pdfs(pdf_files, query, index):
