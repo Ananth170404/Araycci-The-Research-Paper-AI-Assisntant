@@ -6,14 +6,10 @@ huggingface-hub
 gTTS
 together
 transformers
-sounddevice
 SpeechRecognition
 ipython
 numpy
 scipy
-pyaudio
-pydub
-streamlit-player
 requests
 feedparser
 PyMuPDF
