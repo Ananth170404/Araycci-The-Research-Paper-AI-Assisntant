@@ -61,7 +61,6 @@ language_map = {
 def process_local_pdfs(uploaded_files):
     combined_chunks = []
     
-    # Check if uploaded_files is a list of UploadedFile objects
     if isinstance(uploaded_files, list):
         for uploaded_file in uploaded_files:
             # Ensure the file is an instance of UploadedFile
@@ -71,11 +70,12 @@ def process_local_pdfs(uploaded_files):
                 cleaned_text = clean_text(text)
                 chunks = combined_chunking(cleaned_text)
                 combined_chunks.extend(chunks)
+            else:
+                st.error("Uploaded files should be instances of UploadedFile objects.")
     else:
         st.error("Uploaded files should be a list of UploadedFile objects.")
     
     return combined_chunks
-
 
 def download_and_process_arxiv(selection, arxiv_results):
     zip_file = process_docs2(selection, arxiv_results)
@@ -85,7 +85,6 @@ def download_and_process_arxiv(selection, arxiv_results):
         file_name="pdfs.zip",
         mime="application/zip"
     )
-
 
 def handle_query_response(query, lang):
     relevant_chunks = get_relevant_chunks(query, st.session_state.index)
@@ -142,7 +141,6 @@ if Source == "Local":
                 else:
                     st.error("Failed to create Pinecone index.")
 
-
 # Handle Web Search and Download
 if Source == "Web":
     search = st.text_input("Enter the search query: ")
@@ -161,7 +159,6 @@ if Source == "Web":
         selected_indices = [i for i in selection if selection[i]]
        
         if st.button("Download Selection"):
-        
             st.session_state.download = True
             st.session_state.selected_indices = selected_indices
             st.write(f"Selected indices: {st.session_state.selected_indices}")
@@ -172,7 +169,6 @@ if Source == "Web":
                     download_and_process_arxiv(st.session_state.selected_indices, arxiv_results)
                 st.success('Files Zipped And Ready To Download')
                 st.session_state.papers_downloaded = True
-
             else:
                 st.write("You May Now Switch To Local To Proceed")
                     
