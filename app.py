@@ -64,7 +64,7 @@ def process_local_pdfs(uploaded_files):
     if isinstance(uploaded_files, list):
         for uploaded_file in uploaded_files:
             # Ensure the file is an instance of UploadedFile
-            if isinstance(uploaded_file, st.uploaded_file_manager.UploadedFile):
+            if isinstance(uploaded_file, st.runtime.uploaded_file_manager.UploadedFile):
                 # Extract text from the file
                 text = extract_text_from_pdf(uploaded_file)
                 cleaned_text = clean_text(text)
