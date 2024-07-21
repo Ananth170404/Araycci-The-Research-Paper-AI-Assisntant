@@ -8,6 +8,7 @@ def translate(text, lang):
     # Load the Together API key from the environment variables
     together_api_key = "dc4921bdc25d60750f8610d2f7212a8c26b6b8949450d31387fba18ee42a0b07"
 
+# Setting up the model
     client = Together(api_key=together_api_key)
 
     # Setting up the prompt
@@ -31,7 +32,7 @@ def translate(text, lang):
         response = client.chat.completions.create(
             model="meta-llama/Llama-3-8b-chat-hf",
             messages=messages,
-            max_tokens=5000,
+            max_tokens=max_tokens,
             temperature=0.2,
             top_p=0.7,
             top_k=50,
@@ -43,7 +44,8 @@ def translate(text, lang):
         response_text = ""
         for chunk in response:
             for choice in chunk.choices:
-                response_text += choice.text
+                if choice.text:
+                    response_text += choice.text
 
         if not response_text.strip():
             raise ValueError("The translation response is empty.")
@@ -58,7 +60,8 @@ def generate_audio(text, lang):
     if not text:
         raise ValueError("No text to speak.")
     languages = {"English": "en", "French": "fr", "Spanish": "es"}
-    tts = gTTS(text=text, lang=languages.get(lang, "en"))
+    lang_code = languages.get(lang, "en")
+    tts = gTTS(text=text, lang=lang_code)
     audio_io = io.BytesIO()
     tts.write_to_fp(audio_io)
     audio_io.seek(0)
