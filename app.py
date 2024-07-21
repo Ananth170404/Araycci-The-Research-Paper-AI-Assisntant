@@ -1,7 +1,6 @@
 import streamlit as st
 from RAG import generate_response_from_chunks, get_relevant_chunks, create_index, extract_text_from_pdf, clean_text, chunk_text, store_chunks_in_pinecone
 from translate import translate, generate_audio
-from stt import start_recording, stop_recording
 from ARAYCCI_ALL import search_arxiv, process_docs, clustering, sanitize_filename, list_pdfs
 import os
 
@@ -31,8 +30,8 @@ def reset_page():
 
 # Streamlit app
 st.sidebar.image("logo.jpg")
-st.title("Aryacci Research Paper Bot")
-st.sidebar.title("PDF Research Assistant")
+st.title("Aryacci Research Paper Assistant")
+st.sidebar.title("Research Assistant")
 
 lang = st.sidebar.radio("Choose", ["English", "French", "Spanish"])
 
@@ -145,17 +144,7 @@ elif Source == "Web":
 
 # Query handling
 if st.session_state.index:
-    speech = st.toggle("Voice")
-    query = st.text_input("Enter your question:") if not speech else ""
-    if speech:
-        if lang in language_map:
-            language = language_map[lang]
-        if st.button("Start Recording"):
-            start_recording()
-            st.write("Recording...")
-        if st.button("Stop Recording"):
-            query = stop_recording()
-            st.write(query)
+    query = st.text_input("Enter your question:")
     if query:
         st.session_state.query = query
     if st.button("Ask") and st.session_state.query:
