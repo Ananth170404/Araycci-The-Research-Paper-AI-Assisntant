@@ -181,7 +181,7 @@ if st.session_state.index:
     if st.button("Ask") and st.session_state.query:
         with st.spinner("Searching for answers..."):
             handle_query_response(st.session_state.query, lang)
-        st.session_state.query = ""
+        
     if st.button("End conversation"):
         reset_page()
         st.experimental_rerun()
