@@ -155,6 +155,8 @@ if Source == "Web":
 
     if st.session_state.search:
         arxiv_results = st.session_state.search
+        selection = {}
+
         for i, result in enumerate(arxiv_results):
             st.subheader(f"{i+1}. {result['title']} ({result['published']})")
             st.write(f"**Authors:** {', '.join(result['authors'])}")
@@ -163,14 +165,14 @@ if Source == "Web":
 
             if f"selected_{i}" not in st.session_state:
                 st.session_state[f"selected_{i}"] = False
-            selected = st.checkbox("Download Paper", key=f"selected_{i}", value=st.session_state[f"selected_{i}"])
-            st.session_state[f"selected_{i}"] = selected
+            selection[f"selected_{i}"] = st.checkbox("Download Paper", key=f"selected_{i}", value=st.session_state[f"selected_{i}"])
 
-        selected_indices = [i for i in range(len(arxiv_results)) if st.session_state[f"selected_{i}"]]
+        selected_indices = [i for i in range(len(arxiv_results)) if selection[f"selected_{i}"]]
 
         if st.button("Download Selection"):
             st.session_state.download = True
             st.session_state.selected_indices = selected_indices
+            st.write(f"Selected indices: {st.session_state.selected_indices}")
 
         if st.session_state.download and st.session_state.selected_indices:
             if not st.session_state.papers_downloaded:
@@ -180,7 +182,7 @@ if Source == "Web":
                 st.session_state.papers_downloaded = True
             else:
                 st.write("You May Now Switch To Local To Proceed")
-                    
+              
 # Query handling
 if st.session_state.index:
     query = st.text_input("Enter your question:")
