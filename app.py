@@ -150,21 +150,27 @@ if Source == "Web":
     max_results = st.slider("Maximum results:", 10, 100)
     if st.button("Search"):
         st.session_state.search = search_arxiv(search, max_results)
+        st.session_state.selected_indices = []  # Reset selection on new search
+        st.session_state.download = False
+
     if st.session_state.search:
         arxiv_results = st.session_state.search
-        selection = {}
         for i, result in enumerate(arxiv_results):
             st.subheader(f"{i+1}. {result['title']} ({result['published']})")
             st.write(f"**Authors:** {', '.join(result['authors'])}")
             st.write(f"**Summary:** {result['summary']}")
             st.write(f"**Link:** [arXiv Paper]({result['link']})")
-            selection[i] = st.checkbox("Download Paper", key=str(i+1))
-        selected_indices = [i for i in selection if selection[i]]
-       
+
+            if f"selected_{i}" not in st.session_state:
+                st.session_state[f"selected_{i}"] = False
+            selected = st.checkbox("Download Paper", key=f"selected_{i}", value=st.session_state[f"selected_{i}"])
+            st.session_state[f"selected_{i}"] = selected
+
+        selected_indices = [i for i in range(len(arxiv_results)) if st.session_state[f"selected_{i}"]]
+
         if st.button("Download Selection"):
             st.session_state.download = True
             st.session_state.selected_indices = selected_indices
-            st.write(f"Selected indices: {st.session_state.selected_indices}")
 
         if st.session_state.download and st.session_state.selected_indices:
             if not st.session_state.papers_downloaded:
