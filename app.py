@@ -58,7 +58,7 @@ language_map = {
     'French': 'fr-FR'
 }
 
-def process_local_pdfs(uploaded_files):
+def process_local_pdfs(data):
     combined_chunks = []
     if isinstance(data, pd.DataFrame):
         data= data.to_dict()
