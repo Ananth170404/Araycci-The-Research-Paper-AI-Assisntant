@@ -60,21 +60,18 @@ language_map = {
 
 def process_local_pdfs(uploaded_files):
     combined_chunks = []
-    
-    if isinstance(uploaded_files, list):
-        for uploaded_file in uploaded_files:
-            # Ensure the file is an instance of UploadedFile
-            if isinstance(uploaded_file, st.runtime.uploaded_file_manager.UploadedFile):
-                # Extract text from the file
-                text = extract_text_from_pdf(uploaded_file)
-                cleaned_text = clean_text(text)
-                chunks = combined_chunking(cleaned_text)
-                combined_chunks.extend(chunks)
-            else:
-                st.error("Uploaded files should be instances of UploadedFile objects.")
-    else:
-        st.error("Uploaded files should be a list of UploadedFile objects.")
-    
+    if isinstance(data, pd.DataFrame):
+        data= data.to_dict()
+        data = data['text']
+
+    for pdf_file in data:
+        if isinstance(data[pdf_file], str):
+            text = data[pdf_file]  
+        else:
+            text = extract_text_from_pdf(pdf_file)
+        cleaned_text = clean_text(text)
+        chunks = combined_chunking(cleaned_text)
+        combined_chunks.extend(chunks)
     return combined_chunks
 
 def download_and_process_arxiv(selection, arxiv_results):
@@ -115,11 +112,10 @@ if Source == "Local":
                 if st.button("Process Cluster") and selected_cluster:
                     st.write(f"Processing cluster: {selected_cluster}")
                     selected_cluster = int(selected_cluster)
-                    cluster_indices = result_df[result_df['Cluster'] == selected_cluster].index.tolist()
-                    selected_pdfs = [uploaded_file for i, uploaded_file in enumerate(data) if i in cluster_indices]
+                    result_df = result_df[result_df['Cluster'] == selected_cluster]
 
                     with st.spinner("Processing PDFs..."):
-                        combined_chunks = process_local_pdfs(selected_pdfs)
+                        combined_chunks = process_local_pdfs(result_df)
                         st.session_state.index = create_index()
                         if st.session_state.index:
                             store_chunks_in_pinecone(combined_chunks, st.session_state.index)
