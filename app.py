@@ -60,19 +60,25 @@ language_map = {
 
 def process_local_pdfs(data):
     combined_chunks = []
+    
+    # Check if data is a DataFrame
     if isinstance(data, pd.DataFrame):
-        data= data.to_dict()
+        data = data.to_dict()
         data = data['text']
 
+    # If data is a list of uploaded files
     for pdf_file in data:
-        if isinstance(data[pdf_file], str):
+        if isinstance(data, dict) and isinstance(data[pdf_file], str):
             text = data[pdf_file]  
         else:
             text = extract_text_from_pdf(pdf_file)
+        
         cleaned_text = clean_text(text)
         chunks = combined_chunking(cleaned_text)
         combined_chunks.extend(chunks)
+    
     return combined_chunks
+
 
 def download_and_process_arxiv(selection, arxiv_results):
     zip_file = process_docs2(selection, arxiv_results)
