@@ -18,7 +18,7 @@ from sklearn.decomposition import PCA
 import zipfile
 import io
 
-nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 
 
