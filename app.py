@@ -194,4 +194,4 @@ if st.session_state.index:
         
     if st.button("End conversation"):
         reset_page()
-        st.experimental_rerun()
+        st.rerun()
