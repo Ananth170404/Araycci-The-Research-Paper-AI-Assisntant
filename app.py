@@ -51,12 +51,7 @@ Source = st.radio(
     on_change=reset_page
 )
 
-# Language map
-language_map = {
-    'English': 'en-US',
-    'Spanish': 'es-ES',
-    'French': 'fr-FR'
-}
+
 
 def process_local_pdfs(data):
     combined_chunks = []
@@ -93,7 +88,7 @@ def handle_query_response(query, lang):
     relevant_chunks = get_relevant_chunks(query, st.session_state.index)
     response = generate_response_from_chunks(relevant_chunks, query)
     if lang != "English":
-        translated_response = translate(response, lang)
+        translated_response = translate(response, lang, True)
         st.write(translated_response)
         audio_io = generate_audio(translated_response, lang)
     else:
@@ -187,7 +182,11 @@ if Source == "Web":
 if st.session_state.index:
     query = st.text_input("Enter your question:")
     if query:
-        st.session_state.query = query
+        if lang!="English":
+            translated_query = translate(query, lang, False)
+            st.session_state.query = translated_query
+        else:
+            st.session_state.query = query
     if st.button("Ask") and st.session_state.query:
         with st.spinner("Searching for answers..."):
             handle_query_response(st.session_state.query, lang)
