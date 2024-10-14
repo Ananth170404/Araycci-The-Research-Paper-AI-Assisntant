@@ -5,7 +5,6 @@ pinecone-client
 huggingface-hub
 gTTS
 deep-translator
-text-wrap
 transformers
 SpeechRecognition
 ipython
