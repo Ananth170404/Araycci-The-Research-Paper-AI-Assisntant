@@ -4,7 +4,7 @@ sentence-transformers
 pinecone-client
 huggingface-hub
 gTTS
-deep-translate
+deep-translator
 text-wrap
 transformers
 SpeechRecognition
