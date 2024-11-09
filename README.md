@@ -1,5 +1,4 @@
-# Arayacci Research Paper Bot
-
+# Arayacci - The Research Paper AI Assistant
 ## Overview
 
 Arayacci Research Paper Bot is an interactive research assistant built using Streamlit. This application allows users to process and cluster local PDF files, search and download research papers from ArXiv, and ask questions about the content. The bot provides answers based on the processed text and supports translation and audio generation for responses.
