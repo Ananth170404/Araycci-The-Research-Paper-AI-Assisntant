@@ -1,7 +1,7 @@
 streamlit
 PyMuPDF
 sentence-transformers
-pinecone-client
+pinecone
 huggingface-hub
 gTTS
 deep-translator
